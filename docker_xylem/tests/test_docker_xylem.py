@@ -26,7 +26,6 @@ class Test(unittest.TestCase):
             self.mountfs, *a)
 
     def mountfs(self, *a):
-        print a
         pass
 
     def xylem_request(self, queue, call, data):
