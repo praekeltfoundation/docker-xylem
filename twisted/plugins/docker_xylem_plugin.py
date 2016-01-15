@@ -11,6 +11,9 @@ from docker_xylem import service
 class Options(usage.Options):
     optParameters = [
         ["socket", "s", "/run/docker/plugins/xylem.sock", "Socket path"],
+        ["host", "h", None, "Xylem gluster host"],
+        ["mounts", "m", "/var/lib/docker/volumes",
+            "Path to mount filesystems"],
     ]
  
 class DockerServiceMaker(object):
@@ -22,6 +25,6 @@ class DockerServiceMaker(object):
     def makeService(self, options):
         
         return internet.UNIXServer(options['socket'],
-            server.Site(service.DockerService()))
+            server.Site(service.DockerService(options)))
  
 serviceMaker = DockerServiceMaker()
