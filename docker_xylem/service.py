@@ -13,7 +13,7 @@ class DockerService(resource.Resource):
     isLeaf = True
     addSlash = True
 
-    def __init__(self, options):
+    def __init__(self, config):
         self.requestRouter = {
             '/Plugin.Activate': self.plugin_activate,
             '/VolumeDriver.Create': self.create_volume,
@@ -22,12 +22,16 @@ class DockerService(resource.Resource):
             '/VolumeDriver.Path': self.get_volume_path,
             '/VolumeDriver.Unmount': self.unmount_volume
         }
-        self.xylem_host = options['host']
-        self.mount_path = options['mounts']
+        
+        self.xylem_host = config['host']
+        self.xylem_port = config.get('port', 7701)
+        self.mount_path = config.get('mount_path', '/var/lib/docker/volumes')
 
     def xylem_request(self, queue, call, data):
         return utils.HTTPRequest(timeout=60).getJson(
-            'http://%s:7701/queues/%s/wait/%s' % (self.xylem_host, queue, call),
+            'http://%s:%s/queues/%s/wait/%s' % (
+                self.xylem_host, self.xylem_port, queue, call
+            ),
             method='POST',
             data=json.dumps(data),
         )

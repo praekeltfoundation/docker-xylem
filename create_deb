@@ -1,0 +1,5 @@
+#!/bin/bash
+
+fpm -s python -t deb --no-python-dependencies --after-install scripts/post-install.sh --deb-init scripts/docker-xylem \
+    -d python-twisted -d python-yaml\
+    -a amd64 -n docker-xylem setup.py
