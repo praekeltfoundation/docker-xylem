@@ -21,7 +21,7 @@ test -x $DAEMON || exit 0
 LOGDIR=/var/log
 PIDFILE=/var/run/$NAME.pid
 DODTIME=2
-DAEMON_OPTS="--pidfile=${PIDFILE} --logfile=${LOGDIR}/docker-xylem.log -n docker_xylem -c /etc/docker/xylem-plugin.yml"
+DAEMON_OPTS="--pidfile=${PIDFILE} --logfile=${LOGDIR}/docker-xylem.log docker_xylem -c /etc/docker/xylem-plugin.yml"
 
 set -e
 
