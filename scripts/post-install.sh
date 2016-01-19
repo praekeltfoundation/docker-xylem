@@ -1,13 +1,13 @@
 #!/bin/bash
 
-update-rc.d xylem defaults
-service xylem status >/dev/null 2>&1
+update-rc.d docker-xylem defaults
+service docker-xylem status >/dev/null 2>&1
 
 if [ "$?" -gt "0" ];
 then
-    service xylem start 2>&1
+    service docker-xylem start 2>&1
 else
-    service xylem restart 2>&1
+    service docker-xylem restart 2>&1
 fi 
 
 exit 0
