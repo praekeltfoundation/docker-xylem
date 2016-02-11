@@ -20,12 +20,16 @@ class DockerService(resource.Resource):
             '/VolumeDriver.Remove': self.remove_volume,
             '/VolumeDriver.Mount': self.mount_volume,
             '/VolumeDriver.Path': self.get_volume_path,
-            '/VolumeDriver.Unmount': self.unmount_volume
+            '/VolumeDriver.Unmount': self.unmount_volume,
+            '/VolumeDriver.Get': self.get_volume,
+            '/VolumeDriver.List': self.list_volumes,
         }
         
         self.xylem_host = config['host']
         self.xylem_port = config.get('port', 7701)
         self.mount_path = config.get('mount_path', '/var/lib/docker/volumes')
+
+        self.current = {}
 
     def xylem_request(self, queue, call, data):
         return utils.HTTPRequest(timeout=60).getJson(
@@ -78,6 +82,9 @@ class DockerService(resource.Resource):
         try:
             yield self._mount_fs(self.xylem_host, name, path)
 
+            if not name in self.current:
+                self.current[name] = path
+
             defer.returnValue({
                 "Mountpoint": path,
                 "Err": None
@@ -126,6 +133,31 @@ class DockerService(resource.Resource):
             err = None
 
         defer.returnValue({"Err": err})
+
+    def get_volume(self, request, data):
+        name = data['Name']
+
+        if name in self.current:
+            return {
+                'Volume': {
+                    'Name': name,
+                    'Mountpoint': self.current[name]
+                }, 
+                'Err': ''
+            }
+        else:
+            return {'Err': 'No mounted volume'}
+
+    def list_volumes(self, request, data):
+        vols = []
+
+        for k, v in self.current.items():
+            vols.append({
+                'Name': k,
+                'Mountpoint': v
+            })
+
+        return {'Volumes': vols, 'Err': ''}
     
     def plugin_activate(self, request, data):
         return {
@@ -139,7 +171,11 @@ class DockerService(resource.Resource):
         request.finish()
 
     def _route_request(self, request):
-        data = json.loads(cgi.escape(request.content.read()))
+        cnt = request.content.read()
+        if cnt:
+            data = json.loads(cgi.escape(cnt))
+        else:
+            data = None
 
         method = self.requestRouter.get(request.path)
 
