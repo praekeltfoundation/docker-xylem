@@ -66,6 +66,12 @@ class Test(unittest.TestCase):
             '/VolumeDriver.Mount', {'Name': 'testvol', 'Opts': {}}))
 
         self.assertEquals(result['Mountpoint'], '/mnt/testvol')
+        self.assertEquals(result['Err'], 'None')
+
+        result = yield self.service._route_request(FakeRequest(
+            '/VolumeDriver.Unmount', {'Name': 'testvol'}))
+
+        self.assertEquals(result['Err'], 'None')
 
     @defer.inlineCallbacks
     def test_path(self):
@@ -74,4 +80,16 @@ class Test(unittest.TestCase):
 
         self.assertEquals(result['Mountpoint'], '/mnt/testvol')
 
+    @defer.inlineCallbacks
+    def test_get(self):
+        result = yield self.service._route_request(FakeRequest(
+            '/VolumeDriver.Get', {'Name': 'testvol', 'Opts': {}}))
 
+        self.assertEquals(result['Err'], 'None')
+
+    @defer.inlineCallbacks
+    def test_list(self):
+        result = yield self.service._route_request(FakeRequest(
+            '/VolumeDriver.List', {'Name': 'testvol', 'Opts': {}}))
+
+        self.assertEquals(result['Err'], 'None')
