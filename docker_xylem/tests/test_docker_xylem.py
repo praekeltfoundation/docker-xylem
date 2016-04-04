@@ -25,6 +25,9 @@ class Test(unittest.TestCase):
         self.service._mount_fs = lambda *a: defer.maybeDeferred(
             self.mountfs, *a)
 
+        self.service._umount_fs = lambda *a: defer.maybeDeferred(
+            self.mountfs, *a)
+
     def mountfs(self, *a):
         pass
 
