@@ -16,7 +16,7 @@ class Test(unittest.TestCase):
     def setUp(self):
         self.service = DockerService({
             'host': 'localhost',
-            'mounts': '/mnt'
+            'mount_path': '/mnt'
         })
 
         self.service.xylem_request = lambda *a: defer.maybeDeferred(
