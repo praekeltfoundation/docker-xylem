@@ -69,8 +69,10 @@ class DockerService(resource.Resource):
         out, err, code = yield utils.fork('/bin/umount', args=(path,))
 
         if code > 0:
-            raise Exception(err)
-
+            if "%s is not mounted" % path in err:
+                defer.returnValue(True)
+            else:
+                raise Exception(err)
         else:
             defer.returnValue(True)
 
@@ -113,11 +115,11 @@ class DockerService(resource.Resource):
             "Err": None
         }
 
-    @defer.inlineCallbacks
     def remove_volume(self, request, data):
+        # FIXME: This probably isn't supposed to do nothing.
         name = data['Name']
 
-        defer.returnValue({"Err": None})
+        return {"Err": None}
 
     @defer.inlineCallbacks
     def create_volume(self, request, data):
@@ -143,7 +145,7 @@ class DockerService(resource.Resource):
                     'Name': name,
                     'Mountpoint': self.current[name]
                 }, 
-                'Err': ''
+                'Err': None
             }
         else:
             return {'Err': 'No mounted volume'}
@@ -157,7 +159,7 @@ class DockerService(resource.Resource):
                 'Mountpoint': v
             })
 
-        return {'Volumes': vols, 'Err': ''}
+        return {'Volumes': vols, 'Err': None}
     
     def plugin_activate(self, request, data):
         return {
