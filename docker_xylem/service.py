@@ -143,7 +143,7 @@ class DockerService(resource.Resource):
                     'Name': name,
                     'Mountpoint': self.current[name]
                 }, 
-                'Err': ''
+                'Err': None
             }
         else:
             return {'Err': 'No mounted volume'}
@@ -157,7 +157,7 @@ class DockerService(resource.Resource):
                 'Mountpoint': v
             })
 
-        return {'Volumes': vols, 'Err': ''}
+        return {'Volumes': vols, 'Err': None}
     
     def plugin_activate(self, request, data):
         return {
