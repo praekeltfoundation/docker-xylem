@@ -76,20 +76,27 @@ class Test(unittest.TestCase):
     @defer.inlineCallbacks
     def test_path(self):
         result = yield self.service._route_request(FakeRequest(
-            '/VolumeDriver.Path', {'Name': 'testvol', 'Opts': {}}))
+            '/VolumeDriver.Path', {'Name': 'testvol'}))
 
         self.assertEquals(result['Mountpoint'], '/mnt/testvol')
 
     @defer.inlineCallbacks
     def test_get(self):
+        yield self.service._route_request(FakeRequest(
+            '/VolumeDriver.Mount', {'Name': 'testvol', 'Opts': {}}))
+
         result = yield self.service._route_request(FakeRequest(
-            '/VolumeDriver.Get', {'Name': 'testvol', 'Opts': {}}))
+            '/VolumeDriver.Get', {'Name': 'testvol'}))
 
         self.assertEquals(result['Err'], None)
 
     @defer.inlineCallbacks
     def test_list(self):
+        yield self.service._route_request(FakeRequest(
+            '/VolumeDriver.Mount', {'Name': 'testvol', 'Opts': {}}))
+
         result = yield self.service._route_request(FakeRequest(
-            '/VolumeDriver.List', {'Name': 'testvol', 'Opts': {}}))
+            '/VolumeDriver.List', {}))
 
         self.assertEquals(result['Err'], None)
+        self.assertEquals(result['Volumes'][0]['Name'], 'testvol')
