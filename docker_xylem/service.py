@@ -113,11 +113,11 @@ class DockerService(resource.Resource):
             "Err": None
         }
 
-    @defer.inlineCallbacks
     def remove_volume(self, request, data):
+        # FIXME: This probably isn't supposed to do nothing.
         name = data['Name']
 
-        defer.returnValue({"Err": None})
+        return {"Err": None}
 
     @defer.inlineCallbacks
     def create_volume(self, request, data):

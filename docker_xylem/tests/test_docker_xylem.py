@@ -54,6 +54,13 @@ class Test(unittest.TestCase):
         self.assertEquals(result['Err'], None)
 
     @defer.inlineCallbacks
+    def test_remove(self):
+        result = yield self.service._route_request(FakeRequest(
+            '/VolumeDriver.Remove', {'Name': 'testvol', 'Opts': {}}))
+
+        self.assertEquals(result['Err'], None)
+
+    @defer.inlineCallbacks
     def test_mount(self):
         result = yield self.service._route_request(FakeRequest(
             '/VolumeDriver.Mount', {'Name': 'testvol', 'Opts': {}}))
