@@ -69,7 +69,7 @@ class DockerService(resource.Resource):
         out, err, code = yield utils.fork('/bin/umount', args=(path,))
 
         if code > 0:
-            if "/mnt/testvol is not mounted" in err:
+            if "%s is not mounted" % path in err:
                 defer.returnValue(True)
             else:
                 raise Exception(err)
