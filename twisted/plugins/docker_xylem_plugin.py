@@ -1,3 +1,4 @@
+import os
 import yaml
 
 from zope.interface import implements
@@ -23,6 +24,9 @@ class DockerServiceMaker(object):
  
     def makeService(self, options):
         config = yaml.load(open(options['config']))
+
+        if not os.path.exists('/run/docker/plugins'):
+            os.makedirs('/run/docker/plugins')
 
         return internet.UNIXServer(config.get(
             'socket', "/run/docker/plugins/xylem.sock"),
