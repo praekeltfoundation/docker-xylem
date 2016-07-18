@@ -28,8 +28,13 @@ class DockerService(resource.Resource):
         self.xylem_host = config['host']
         self.xylem_port = config.get('port', 7701)
         self.mount_path = config.get('mount_path', '/var/lib/docker/volumes')
+        self.volume_name = config.get('volume_name', 'seed')
+
+        self.volume_path = os.path.join(self.mount_path, self.volume_name)
 
         self.current = {}
+
+        self.mounted = None
 
     def xylem_request(self, queue, call, data):
         return utils.HTTPRequest(timeout=60).getJson(
@@ -39,6 +44,27 @@ class DockerService(resource.Resource):
             method='POST',
             data=json.dumps(data),
         )
+
+    def _get_path(self, name):
+        return os.path.join(self.volume_path, name)
+
+    def _get_proc_mounts(self):
+        return open('/proc/mounts', 'rt').read()
+
+    def _check_mount(self, name):
+        path = os.path.join(self.mount_path, name)
+
+        mounts = self._get_proc_mounts()
+
+        mnt = None
+
+        for l in mounts.split('\n'):
+            if l.strip():
+                src, mount, typ, opts, dump, fpass = l.strip().split()
+                if mount == path:
+                    mnt = src
+
+        return mnt
 
     @defer.inlineCallbacks
     def _mount_fs(self, server, volume, dst):
@@ -77,78 +103,85 @@ class DockerService(resource.Resource):
             defer.returnValue(True)
 
     @defer.inlineCallbacks
+    def check_base_mount(self):
+        if not self._check_mount(self.volume_name):
+            result = yield self.xylem_request('gluster', 'createvolume', {
+                        'name': self.volume_name})
+
+            if not result['result']['running']:
+                raise Exception("Error starting volume %s" % self.volume_name)
+
+            yield self._mount_fs(self.xylem_host, self.volume_name,
+                self.volume_path)
+
     def mount_volume(self, request, data):
         name = data['Name']
-        path = os.path.join(self.mount_path, name)
+        path = self._get_path(name)
 
         try:
-            yield self._mount_fs(self.xylem_host, name, path)
+            self.check_base_mount()
+
+            if not os.path.exists(path):
+                os.makedirs(path)
 
             if not name in self.current:
                 self.current[name] = path
 
-            defer.returnValue({
+            return {
                 "Mountpoint": path,
                 "Err": None
-            })
-
+            }
         except Exception, e:
-            defer.returnValue({"Err": repr(e)})
+            return {"Err": repr(e)}
 
-    @defer.inlineCallbacks
     def unmount_volume(self, request, data):
         name = data['Name']
-        path = os.path.join(self.mount_path, name)
 
-        try:
-            yield self._umount_fs(path)
-            defer.returnValue({"Err": None})
+        if name in self.current:
+            del self.current[name]
+        else:
+            log.msg("%s not mounted" % name)
 
-        except Exception, e:
-            defer.returnValue({"Err": repr(e)})
+        return {"Err": None}
 
     def get_volume_path(self, request, data):
         name = data['Name']
-        path = os.path.join(self.mount_path, name)
+        path = self._get_path(name)
         return {
             "Mountpoint": path,
             "Err": None
         }
 
     def remove_volume(self, request, data):
-        # FIXME: This probably isn't supposed to do nothing.
-        name = data['Name']
-
         return {"Err": None}
 
-    @defer.inlineCallbacks
     def create_volume(self, request, data):
         name = data['Name']
+        path = self._get_path(name)
+        err = None
+        try:
+            self.check_base_mount()
+        except Exception, e:
+            return {"Err": str(e)}
 
-        result = yield self.xylem_request('gluster', 'createvolume', {
-            'name': name
-        })
+        if not os.path.exists(path):
+            try:
+                os.makedirs(path)
+            except Exception, e:
+                err = "Failed to create volume %s: %s" % (name, e)
 
-        if not result['result']['running']:
-            err = "Error creating volume %s" % name
-        else:
-            err = None
-
-        defer.returnValue({"Err": err})
+        return {"Err": err}
 
     def get_volume(self, request, data):
         name = data['Name']
 
-        if name in self.current:
-            return {
-                'Volume': {
-                    'Name': name,
-                    'Mountpoint': self.current[name]
-                }, 
-                'Err': None
-            }
-        else:
-            return {'Err': 'No mounted volume'}
+        return {
+            'Volume': {
+                'Name': name,
+                'Mountpoint': self._get_path(name)
+            }, 
+            'Err': None
+        }
 
     def list_volumes(self, request, data):
         vols = []
@@ -169,6 +202,8 @@ class DockerService(resource.Resource):
     def completeCall(self, response, request):
         # Render the json response from call
         response = json.dumps(response)
+        log.msg(response)
+
         request.write(response)
         request.finish()
 
