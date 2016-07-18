@@ -1,4 +1,5 @@
 import yaml
+import os
 
 from zope.interface import implements
  
@@ -24,8 +25,14 @@ class DockerServiceMaker(object):
     def makeService(self, options):
         config = yaml.load(open(options['config']))
 
-        return internet.UNIXServer(config.get(
-            'socket', "/run/docker/plugins/xylem.sock"),
+        socket = config.get('socket', "/run/docker/plugins/xylem.sock")
+
+        sock_path = os.path.dirname(socket)
+
+        if not os.path.exists(sock_path):
+            os.makedirs(sock_path)
+
+        return internet.UNIXServer(socket,
             server.Site(service.DockerService(config)))
  
 serviceMaker = DockerServiceMaker()
