@@ -54,15 +54,13 @@ class DockerService(resource.Resource):
 
         mounts = self._get_proc_mounts()
 
-        mnt = None
-
         for l in mounts.split('\n'):
             if l.strip():
                 src, mount, typ, opts, dump, fpass = l.strip().split()
                 if mount == path:
-                    mnt = src
+                    return True
 
-        return mnt
+        return False
 
     @defer.inlineCallbacks
     def _mount_fs(self, server, volume, dst):
@@ -112,12 +110,13 @@ class DockerService(resource.Resource):
             yield self._mount_fs(self.xylem_host, self.volume_name,
                 self.volume_path)
 
+    @defer.inlineCallbacks
     def mount_volume(self, request, data):
         name = data['Name']
         path = self._get_path(name)
 
         try:
-            self.check_base_mount()
+            yield self.check_base_mount()
 
             if not os.path.exists(path):
                 os.makedirs(path)
@@ -125,12 +124,12 @@ class DockerService(resource.Resource):
             if not name in self.current:
                 self.current[name] = path
 
-            return {
+            defer.returnValue({
                 "Mountpoint": path,
                 "Err": None
-            }
+            })
         except Exception, e:
-            return {"Err": repr(e)}
+            defer.returnValue({"Err": repr(e)})
 
     def unmount_volume(self, request, data):
         name = data['Name']
@@ -153,14 +152,15 @@ class DockerService(resource.Resource):
     def remove_volume(self, request, data):
         return {"Err": None}
 
+    @defer.inlineCallbacks
     def create_volume(self, request, data):
         name = data['Name']
         path = self._get_path(name)
         err = None
         try:
-            self.check_base_mount()
+            yield self.check_base_mount()
         except Exception, e:
-            return {"Err": str(e)}
+            defer.returnValue({"Err": str(e)})
 
         if not os.path.exists(path):
             try:
@@ -168,7 +168,7 @@ class DockerService(resource.Resource):
             except Exception, e:
                 err = "Failed to create volume %s: %s" % (name, e)
 
-        return {"Err": err}
+        defer.returnValue({"Err": err})
 
     def get_volume(self, request, data):
         name = data['Name']

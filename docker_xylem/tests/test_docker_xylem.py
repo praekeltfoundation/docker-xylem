@@ -131,4 +131,4 @@ test:/seed %s fuse.glusterfs defaults 0 0\n"""
 
     def test_mount_check(self):
         mount = self.service._check_mount('seed')
-        self.assertEquals(mount, 'test:/seed')
+        self.assertTrue(mount)
