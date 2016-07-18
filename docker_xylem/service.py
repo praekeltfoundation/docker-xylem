@@ -32,8 +32,6 @@ class DockerService(resource.Resource):
 
         self.volume_path = os.path.join(self.mount_path, self.volume_name)
 
-        self.current = {}
-
     def xylem_request(self, queue, call, data):
         return utils.HTTPRequest(timeout=60).getJson(
             'http://%s:%s/queues/%s/wait/%s' % (
@@ -121,9 +119,6 @@ class DockerService(resource.Resource):
             if not os.path.exists(path):
                 os.makedirs(path)
 
-            if not name in self.current:
-                self.current[name] = path
-
             defer.returnValue({
                 "Mountpoint": path,
                 "Err": None
@@ -132,13 +127,6 @@ class DockerService(resource.Resource):
             defer.returnValue({"Err": repr(e)})
 
     def unmount_volume(self, request, data):
-        name = data['Name']
-
-        if name in self.current:
-            del self.current[name]
-        else:
-            log.msg("%s not mounted" % name)
-
         return {"Err": None}
 
     def get_volume_path(self, request, data):
@@ -181,16 +169,28 @@ class DockerService(resource.Resource):
             'Err': None
         }
 
+    @defer.inlineCallbacks
     def list_volumes(self, request, data):
         vols = []
 
-        for k, v in self.current.items():
+        try:
+            yield self.check_base_mount()
+        except Exception, e:
+            defer.returnValue({'Volumes': [], 'Err': str(e)})
+
+        folders = [n for n in os.listdir(self.volume_path)
+                    if os.path.isdir(self._get_path(n))]
+
+        for n in folders:
+            if n.startswith('.'):
+                continue 
+
             vols.append({
-                'Name': k,
-                'Mountpoint': v
+                'Name': n,
+                'Mountpoint': self._get_path(n)
             })
 
-        return {'Volumes': vols, 'Err': None}
+        defer.returnValue({'Volumes': vols, 'Err': None})
     
     def plugin_activate(self, request, data):
         return {
@@ -200,7 +200,7 @@ class DockerService(resource.Resource):
     def completeCall(self, response, request):
         # Render the json response from call
         response = json.dumps(response)
-        log.msg(response)
+        log.msg(response[:128])
 
         request.write(response)
         request.finish()
