@@ -92,6 +92,7 @@ class Test(unittest.TestCase):
             '/VolumeDriver.Get', {'Name': 'testvol'}))
 
         self.assertEquals(result['Err'], None)
+        self.assertEquals(result['Volume']['Status'], {})   # check if the "Status" field is {}
 
     @defer.inlineCallbacks
     def test_list(self):
