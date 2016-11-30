@@ -104,3 +104,11 @@ class Test(unittest.TestCase):
 
         self.assertEquals(result['Err'], None)
         self.assertEquals(result['Volumes'][0]['Name'], 'testvol')
+
+    @defer.inlineCallbacks
+    def test_capabilities(self):
+
+        result = yield self.service._route_request(FakeRequest(
+            '/VolumeDriver.Capabilities', {}))
+
+        self.assertEquals(result['Capabilities']['Scope'], 'global')
