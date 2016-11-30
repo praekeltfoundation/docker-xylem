@@ -143,7 +143,8 @@ class DockerService(resource.Resource):
             return {
                 'Volume': {
                     'Name': name,
-                    'Mountpoint': self.current[name]
+                    'Mountpoint': self.current[name],
+                    'Status': {}
                 }, 
                 'Err': None
             }
