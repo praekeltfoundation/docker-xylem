@@ -23,6 +23,7 @@ class DockerService(resource.Resource):
             '/VolumeDriver.Unmount': self.unmount_volume,
             '/VolumeDriver.Get': self.get_volume,
             '/VolumeDriver.List': self.list_volumes,
+            '/VolumeDriver.Capabilities': self.capabilities,
         }
         
         self.xylem_host = config['host']
@@ -161,7 +162,15 @@ class DockerService(resource.Resource):
             })
 
         return {'Volumes': vols, 'Err': None}
-    
+
+    def capabilities(self, request, data):
+
+        return {
+            "Capabilities": {
+                "Scope": "global"
+            }
+        }
+
     def plugin_activate(self, request, data):
         return {
             'Implements': ['VolumeDriver']
