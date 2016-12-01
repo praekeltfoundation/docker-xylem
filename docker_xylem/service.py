@@ -2,7 +2,6 @@ import os
 import json
 import cgi
 
-from twisted.application import service
 from twisted.internet import defer
 from twisted.web import server, resource
 from twisted.python import log
