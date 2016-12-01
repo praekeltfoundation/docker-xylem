@@ -9,6 +9,7 @@ from twisted.python import log
 
 from docker_xylem import utils
 
+
 class DockerService(resource.Resource):
     isLeaf = True
     addSlash = True
@@ -25,7 +26,7 @@ class DockerService(resource.Resource):
             '/VolumeDriver.List': self.list_volumes,
             '/VolumeDriver.Capabilities': self.capabilities,
         }
-        
+
         self.xylem_host = config['host']
         self.xylem_port = config.get('port', 7701)
         self.mount_path = config.get('mount_path', '/var/lib/docker/volumes')
@@ -146,7 +147,7 @@ class DockerService(resource.Resource):
                     'Name': name,
                     'Mountpoint': self.current[name],
                     'Status': {}
-                }, 
+                },
                 'Err': None
             }
         else:
@@ -193,7 +194,7 @@ class DockerService(resource.Resource):
 
         if not method:
             return "Not Implemented"
-            
+
         return defer.maybeDeferred(method, request, data)
 
     def render_POST(self, request):
