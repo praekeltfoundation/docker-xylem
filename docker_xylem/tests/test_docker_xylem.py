@@ -107,7 +107,10 @@ class Test(unittest.TestCase):
 
     @defer.inlineCallbacks
     def test_capabilities(self):
-
+        """
+        Test for /VolumeDriver.Capabilities
+        VolumeDriver.Capabilities always returns {'Scope': 'global'}.
+        """
         result = yield self.service._route_request(FakeRequest(
             '/VolumeDriver.Capabilities', {}))
 
