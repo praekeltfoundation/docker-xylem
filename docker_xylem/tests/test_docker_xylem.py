@@ -6,10 +6,12 @@ from twisted.internet import defer
 
 from docker_xylem.service import DockerService
 
+
 class FakeRequest(object):
     def __init__(self, path, data):
         self.content = StringIO(json.dumps(data))
         self.path = path
+
 
 class Test(unittest.TestCase):
 
@@ -43,7 +45,7 @@ class Test(unittest.TestCase):
 
     @defer.inlineCallbacks
     def test_activate(self):
-        
+
         result = yield self.service._route_request(FakeRequest(
             '/Plugin.Activate', {}))
 
@@ -92,7 +94,7 @@ class Test(unittest.TestCase):
             '/VolumeDriver.Get', {'Name': 'testvol'}))
 
         self.assertEquals(result['Err'], None)
-        self.assertEquals(result['Volume']['Status'], {})   # check if the "Status" field is {}
+        self.assertEquals(result['Volume']['Status'], {})
 
     @defer.inlineCallbacks
     def test_list(self):

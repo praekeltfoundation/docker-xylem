@@ -3,7 +3,9 @@ python:
   - 2.7
 install:
     - pip install .
+    - pip install flake8
 services:
     - redis-server
 script:
     - trial docker_xylem
+    - flake8
