@@ -86,7 +86,7 @@ class DockerService(resource.Resource):
         try:
             yield self._mount_fs(self.xylem_host, name, path)
 
-            if not name in self.current:
+            if name not in self.current:
                 self.current[name] = path
 
             defer.returnValue({

@@ -219,7 +219,7 @@ class HTTPRequest(object):
         """Make an HTTP request and return the body
         """
 
-        if not 'User-Agent' in headers:
+        if 'User-Agent' not in headers:
             headers['User-Agent'] = ['Tensor HTTP checker']
 
         return self.request(url, method, headers, data, socket)
@@ -228,7 +228,7 @@ class HTTPRequest(object):
     def getJson(self, url, method='GET', headers={}, data=None, socket=None):
         """Fetch a JSON result via HTTP
         """
-        if not 'Content-Type' in headers:
+        if 'Content-Type' not in headers:
             headers['Content-Type'] = ['application/json']
 
         body = yield self.getBody(url, method, headers, data, socket)
