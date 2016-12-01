@@ -7,3 +7,4 @@ services:
     - redis-server
 script:
     - trial docker_xylem
+    - flake8
