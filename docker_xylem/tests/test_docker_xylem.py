@@ -92,6 +92,7 @@ class Test(unittest.TestCase):
             '/VolumeDriver.Get', {'Name': 'testvol'}))
 
         self.assertEquals(result['Err'], None)
+        self.assertEquals(result['Volume']['Status'], {})   # check if the "Status" field is {}
 
     @defer.inlineCallbacks
     def test_list(self):
@@ -103,3 +104,14 @@ class Test(unittest.TestCase):
 
         self.assertEquals(result['Err'], None)
         self.assertEquals(result['Volumes'][0]['Name'], 'testvol')
+
+    @defer.inlineCallbacks
+    def test_capabilities(self):
+        """
+        Test for /VolumeDriver.Capabilities
+        VolumeDriver.Capabilities always returns {'Scope': 'global'}.
+        """
+        result = yield self.service._route_request(FakeRequest(
+            '/VolumeDriver.Capabilities', {}))
+
+        self.assertEquals(result['Capabilities']['Scope'], 'global')
