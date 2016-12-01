@@ -119,7 +119,6 @@ class DockerService(resource.Resource):
 
     def remove_volume(self, request, data):
         # FIXME: This probably isn't supposed to do nothing.
-        name = data['Name']
 
         return {"Err": None}
 
