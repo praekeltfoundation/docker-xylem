@@ -95,8 +95,9 @@ class ProcessProtocol(protocol.ProcessProtocol):
         def killIfAlive():
             try:
                 yield self.transport.signalProcess('KILL')
-                log.msg('Killed source proccess: ' +
-                        'Timeout %s exceeded' % self.timeout)
+                log.msg(
+                    'Killed source proccess: Timeout %s exceeded'
+                    % self.timeout)
             except error.ProcessExitedAlready:
                 pass
 
@@ -179,14 +180,14 @@ class HTTPRequest(object):
             else:
                 agent = Agent(reactor)
 
-        request = agent.request(method, url,
-                                Headers(headers),
-                                StringProducer(data) if data else None
-                                )
+        request = agent.request(
+            method, url,
+            Headers(headers),
+            StringProducer(data) if data else None)
 
         if self.timeout:
-            timer = reactor.callLater(self.timeout, self.abort_request,
-                                      request)
+            timer = reactor.callLater(
+                self.timeout, self.abort_request, request)
 
             def timeoutProxy(request):
                 if timer.active():
