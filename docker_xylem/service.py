@@ -41,6 +41,9 @@ class DockerService(resource.Resource):
             data=json.dumps(data),
         )
 
+    def _fork(self, *args, **kw):
+        return utils.fork(*args, **kw)
+
     @defer.inlineCallbacks
     def _mount_fs(self, server, volume, dst):
         """ Mount a gluster filesystem on this host
@@ -53,7 +56,7 @@ class DockerService(resource.Resource):
             if e.errno != 17:
                 raise e
 
-        out, err, code = yield utils.fork('/bin/mount', args=(
+        out, err, code = yield self._fork('/bin/mount', args=(
             '-t', 'glusterfs', '%s:/%s' % (server, volume), dst))
 
         if code > 0:
@@ -67,9 +70,10 @@ class DockerService(resource.Resource):
         """ Mount a gluster filesystem on this host
         """
 
-        out, err, code = yield utils.fork('/bin/umount', args=(path,))
+        out, err, code = yield self._fork('/bin/umount', args=(path,))
 
         if code > 0:
+            # TODO fix this
             if "%s is not mounted" % path in err:
                 defer.returnValue(True)
             else:

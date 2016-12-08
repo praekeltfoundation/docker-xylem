@@ -24,14 +24,13 @@ class Test(unittest.TestCase):
         self.service.xylem_request = lambda *a: defer.maybeDeferred(
             self.xylem_request, *a)
 
-        self.service._mount_fs = lambda *a: defer.maybeDeferred(
-            self.mountfs, *a)
+        self.service._fork = self.fork
 
-        self.service._umount_fs = lambda *a: defer.maybeDeferred(
-            self.mountfs, *a)
-
-    def mountfs(self, *a):
-        pass
+    def fork(self, *args, **kw):
+        """
+        Method to replace service._fork for testing purposes
+        """
+        return defer.succeed(("", "", 0))
 
     def xylem_request(self, queue, call, data):
         if call == 'createvolume':
