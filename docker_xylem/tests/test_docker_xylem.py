@@ -18,7 +18,7 @@ class Test(unittest.TestCase):
     def setUp(self):
         self.service = DockerService({
             'host': 'localhost',
-            'mount_path': '/mnt'
+            'mount_path': '/tmp/docker-xylem-test'
         })
 
         self.service.xylem_request = lambda *a: defer.maybeDeferred(
@@ -73,7 +73,10 @@ class Test(unittest.TestCase):
         result = yield self.service._route_request(FakeRequest(
             '/VolumeDriver.Mount', {'Name': 'testvol', 'Opts': {}}))
 
-        self.assertEquals(result['Mountpoint'], '/mnt/testvol')
+        self.assertEquals(
+            result['Mountpoint'],
+            '/tmp/docker-xylem-test/testvol'
+        )
         self.assertEquals(result['Err'], None)
 
         result = yield self.service._route_request(FakeRequest(
@@ -86,7 +89,10 @@ class Test(unittest.TestCase):
         result = yield self.service._route_request(FakeRequest(
             '/VolumeDriver.Path', {'Name': 'testvol'}))
 
-        self.assertEquals(result['Mountpoint'], '/mnt/testvol')
+        self.assertEquals(
+            result['Mountpoint'],
+            '/tmp/docker-xylem-test/testvol'
+        )
 
     @defer.inlineCallbacks
     def test_get(self):
