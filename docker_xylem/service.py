@@ -73,8 +73,9 @@ class DockerService(resource.Resource):
         out, err, code = yield self._fork('/bin/umount', args=(path,))
 
         if code > 0:
-            # TODO fix this
-            if "%s is not mounted" % path in err:
+
+            if (path in err) and ("not mounted" in err):
+                # if volume not mounted
                 defer.returnValue(True)
             else:
                 raise Exception(err)
