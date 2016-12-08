@@ -28,8 +28,11 @@ class DockerService(resource.Resource):
 
         self.xylem_host = config['host']
         self.xylem_port = config.get('port', 7701)
-        self.mount_path = config.get('mount_path', '/var/lib/docker/volumes')
-
+        self.mount_path = config.get('mount_path', '/var/lib/docker-xylem/volumes')
+        self.old_paths = {
+            '/var/lib/docker/volumes',
+            'var/lib/docker-xylem/'
+        }
         self.current = {}
 
     def xylem_request(self, queue, call, data):
@@ -75,11 +78,13 @@ class DockerService(resource.Resource):
         if code > 0:
 
             if (path in err) and ("not mounted" in err):
-                # if volume not mounted
-                defer.returnValue(True)
+                # Return false is not mounted
+                defer.returnValue(False)
             else:
+                # Raise an exception for any other error
                 raise Exception(err)
         else:
+            # Return true is mounted
             defer.returnValue(True)
 
     @defer.inlineCallbacks
@@ -107,8 +112,13 @@ class DockerService(resource.Resource):
         path = os.path.join(self.mount_path, name)
 
         try:
-            yield self._umount_fs(path)
-            defer.returnValue({"Err": None})
+            if (yield self._umount_fs(path)):
+                defer.returnValue({"Err": None})
+            else:
+                # Try older mount paths
+                paths = os.path.join(self.old_paths, name)
+                for path in paths:
+                    yield self._umount_fs(path)
 
         except Exception, e:
             defer.returnValue({"Err": repr(e)})
