@@ -116,12 +116,25 @@ class DockerService(resource.Resource):
                 defer.returnValue({"Err": None})
             else:
                 # Try older mount paths
-                paths = os.path.join(self.old_paths, name)
+                paths = self.get_paths(name)
                 for path in paths:
                     yield self._umount_fs(path)
 
+                defer.returnValue({"Err": None})
+
         except Exception, e:
             defer.returnValue({"Err": repr(e)})
+
+    def get_paths(self, name):
+        """
+        Function to return an array of old mount paths
+        :param name: Name of volume
+        :return: list of possible paths for given volume name
+        """
+        paths = []
+        for path in self.old_paths:
+            paths.append(os.path.join(path, name))
+        return paths
 
     def get_volume_path(self, request, data):
         name = data['Name']
