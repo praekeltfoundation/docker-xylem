@@ -1,9 +1,4 @@
-import signal
 import json
-import time
-import urllib
-import exceptions
-import os
 
 from StringIO import StringIO
 
@@ -13,10 +8,10 @@ from twisted.internet import reactor, protocol, defer, error
 from twisted.web.http_headers import Headers
 from twisted.web.iweb import IBodyProducer
 from twisted.web.client import Agent
-from twisted.names import client
 from twisted.python import log
 
 from twisted.internet.endpoints import clientFromString
+
 
 class SocketyAgent(Agent):
     def __init__(self, reactor, path, **kwargs):
@@ -27,10 +22,12 @@ class SocketyAgent(Agent):
         client = clientFromString(reactor, self.path)
         return client
 
+
 class Timeout(Exception):
     """
     Raised to notify that an operation exceeded its timeout.
     """
+
 
 class BodyReceiver(protocol.Protocol):
     """ Simple buffering consumer for body objects """
@@ -45,24 +42,26 @@ class BodyReceiver(protocol.Protocol):
         self.buffer.seek(0)
         self.finished.callback(self.buffer)
 
+
 class StringProducer(object):
     """String producer for writing to HTTP requests
     """
     implements(IBodyProducer)
- 
+
     def __init__(self, body):
         self.body = body
         self.length = len(body)
- 
+
     def startProducing(self, consumer):
         consumer.write(self.body)
         return defer.succeed(None)
- 
+
     def pauseProducing(self):
         pass
- 
+
     def stopProducing(self):
         pass
+
 
 class ProcessProtocol(protocol.ProcessProtocol):
     """ProcessProtocol which supports timeouts"""
@@ -96,11 +95,14 @@ class ProcessProtocol(protocol.ProcessProtocol):
         def killIfAlive():
             try:
                 yield self.transport.signalProcess('KILL')
-                log.msg('Killed source proccess: Timeout %s exceeded' % self.timeout)
+                log.msg(
+                    'Killed source proccess: Timeout %s exceeded'
+                    % self.timeout)
             except error.ProcessExitedAlready:
                 pass
 
         self.timer = reactor.callLater(self.timeout, killIfAlive)
+
 
 def fork(executable, args=(), env={}, path=None, timeout=3600):
     """fork
@@ -120,15 +122,16 @@ def fork(executable, args=(), env={}, path=None, timeout=3600):
     reactor.spawnProcess(p, executable, (executable,)+tuple(args), env, path)
     return d
 
+
 try:
     from twisted.internet.ssl import ClientContextFactory
 
     class WebClientContextFactory(ClientContextFactory):
         def getContext(self, hostname, port):
             return ClientContextFactory.getContext(self)
-    SSL=True
+    SSL = True
 except:
-    SSL=False
+    SSL = False
 
 try:
     from twisted.web import client
@@ -136,6 +139,7 @@ try:
     client.HTTPClientFactory.noisy = False
 except:
     pass
+
 
 class HTTPRequest(object):
     def __init__(self, timeout=120):
@@ -149,7 +153,7 @@ class HTTPRequest(object):
                 request.cancel()
             except error.AlreadyCancelled:
                 return
-        
+
     @defer.inlineCallbacks
     def response(self, request):
         if request.length:
@@ -175,15 +179,15 @@ class HTTPRequest(object):
                     raise Exception('HTTPS requested but not supported')
             else:
                 agent = Agent(reactor)
-        
-        request = agent.request(method, url,
+
+        request = agent.request(
+            method, url,
             Headers(headers),
-            StringProducer(data) if data else None
-        )
+            StringProducer(data) if data else None)
 
         if self.timeout:
-            timer = reactor.callLater(self.timeout, self.abort_request,
-                request)
+            timer = reactor.callLater(
+                self.timeout, self.abort_request, request)
 
             def timeoutProxy(request):
                 if timer.active():
@@ -206,12 +210,11 @@ class HTTPRequest(object):
 
         return request
 
-
     def getBody(self, url, method='GET', headers={}, data=None, socket=None):
         """Make an HTTP request and return the body
         """
 
-        if not 'User-Agent' in headers:
+        if 'User-Agent' not in headers:
             headers['User-Agent'] = ['Tensor HTTP checker']
 
         return self.request(url, method, headers, data, socket)
@@ -220,9 +223,9 @@ class HTTPRequest(object):
     def getJson(self, url, method='GET', headers={}, data=None, socket=None):
         """Fetch a JSON result via HTTP
         """
-        if not 'Content-Type' in headers:
+        if 'Content-Type' not in headers:
             headers['Content-Type'] = ['application/json']
 
         body = yield self.getBody(url, method, headers, data, socket)
-        
+
         defer.returnValue(json.loads(body))

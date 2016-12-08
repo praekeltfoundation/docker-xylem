@@ -2,12 +2,12 @@ import os
 import json
 import cgi
 
-from twisted.application import service
 from twisted.internet import defer
 from twisted.web import server, resource
 from twisted.python import log
 
 from docker_xylem import utils
+
 
 class DockerService(resource.Resource):
     isLeaf = True
@@ -25,7 +25,7 @@ class DockerService(resource.Resource):
             '/VolumeDriver.List': self.list_volumes,
             '/VolumeDriver.Capabilities': self.capabilities,
         }
-        
+
         self.xylem_host = config['host']
         self.xylem_port = config.get('port', 7701)
         self.mount_path = config.get('mount_path', '/var/lib/docker/volumes')
@@ -85,7 +85,7 @@ class DockerService(resource.Resource):
         try:
             yield self._mount_fs(self.xylem_host, name, path)
 
-            if not name in self.current:
+            if name not in self.current:
                 self.current[name] = path
 
             defer.returnValue({
@@ -118,7 +118,6 @@ class DockerService(resource.Resource):
 
     def remove_volume(self, request, data):
         # FIXME: This probably isn't supposed to do nothing.
-        name = data['Name']
 
         return {"Err": None}
 
@@ -146,7 +145,7 @@ class DockerService(resource.Resource):
                     'Name': name,
                     'Mountpoint': self.current[name],
                     'Status': {}
-                }, 
+                },
                 'Err': None
             }
         else:
@@ -193,7 +192,7 @@ class DockerService(resource.Resource):
 
         if not method:
             return "Not Implemented"
-            
+
         return defer.maybeDeferred(method, request, data)
 
     def render_POST(self, request):
