@@ -28,10 +28,13 @@ class DockerService(resource.Resource):
 
         self.xylem_host = config['host']
         self.xylem_port = config.get('port', 7701)
-        self.mount_path = config.get('mount_path', '/var/lib/docker-xylem/volumes')
+        self.mount_path = config.get(
+            'mount_path',
+            '/var/lib/docker-xylem/volumes'
+        )
         self.old_paths = {
             '/var/lib/docker/volumes',
-            'var/lib/docker-xylem/'
+            'var/lib/docker-xylem/',
         }
         self.current = {}
 
