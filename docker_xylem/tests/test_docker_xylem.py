@@ -32,6 +32,10 @@ class Test(unittest.TestCase):
         """
         return defer.succeed(("", "", 0))
 
+    def fork_unmount_err(self, *args, **kw):
+        """Fork to simulate unmount error"""
+        return defer.succeed(("", "%s is not mounted" % kw['args'][0], 32))
+
     def xylem_request(self, queue, call, data):
         if call == 'createvolume':
             return {"result": {
@@ -116,3 +120,43 @@ class Test(unittest.TestCase):
             '/VolumeDriver.Capabilities', {}))
 
         self.assertEquals(result['Capabilities']['Scope'], 'global')
+
+    @defer.inlineCallbacks
+    def test_unmount(self):
+        """
+        Test for /Volume.Unmount
+        """
+
+        # Try unmounting with unchanged mount path.
+
+        data = {'Name': 'testvol', 'ID': 'RANDOM_ID'}
+        yield self.service._route_request(FakeRequest(
+            '/VolumeDriver.Mount', data))
+
+        path = self.service.get_volume_path(None, data)['Mountpoint']
+        result1 = yield self.service._umount_fs(path)
+        result2 = yield self.service._route_request(FakeRequest(
+            '/VolumeDriver.Unmount', data))
+
+        self.assertEquals(result1, True)
+        self.assertEquals(result2['Err'], None)
+
+        # Try unmount with a changed mount path
+
+        yield self.service._route_request(FakeRequest(
+            '/VolumeDriver.Mount', data))
+        self.service.mount_path = '/var/lib/docker/volumes'
+        path = self.service.get_volume_path(None, data)['Mountpoint']
+
+        # Replace the fork function to create a mount error
+        self.service._fork = self.fork_unmount_err
+
+        result3 = yield self.service._umount_fs(path)
+        result4 = yield self.service._route_request(FakeRequest(
+            '/VolumeDriver.Unmount', data))
+
+        self.assertEquals(result3, False)
+        self.assertEquals(result4['Err'], None)
+
+        # Restore the old test fork function
+        self.service._fork = self.fork
