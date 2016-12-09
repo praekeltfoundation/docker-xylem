@@ -34,7 +34,7 @@ class DockerService(resource.Resource):
         )
         self.old_paths = {
             '/var/lib/docker/volumes',
-            'var/lib/docker-xylem/',
+            'var/lib/docker-xylem',
         }
         self.current = {}
 
