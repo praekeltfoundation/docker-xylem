@@ -129,13 +129,10 @@ class Test(unittest.TestCase):
         self.assertEquals(result['Capabilities']['Scope'], 'global')
 
     @defer.inlineCallbacks
-    def test_unmount(self):
+    def test_unmount_unchanged_path(self):
         """
-        Test for /Volume.Unmount
+        Test for /Volume.Unmount when the mount path has NOT been changed
         """
-
-        # Try unmounting with unchanged mount path.
-
         data = {'Name': 'testvol', 'ID': 'RANDOM_ID'}
         yield self.service._route_request(FakeRequest(
             '/VolumeDriver.Mount', data))
@@ -148,22 +145,28 @@ class Test(unittest.TestCase):
         self.assertEquals(result1, True)
         self.assertEquals(result2['Err'], None)
 
-        # Try unmount with a changed mount path
 
+    @defer.inlineCallbacks
+    def test_unmount_changed_path(self):
+        """
+        Test for /Volume.Unmount when the mount path HAS BEEN changed
+        """
+
+        data = {'Name': 'testvol', 'ID': 'RANDOM_ID'}
         yield self.service._route_request(FakeRequest(
             '/VolumeDriver.Mount', data))
         self.service.mount_path = '/var/lib/docker/volumes'
         path = self.service.get_volume_path(None, data)['Mountpoint']
 
-        # Replace the fork function to create a mount error
+        # Replace the fork function to create an unmount error
         self.service._fork = self.fork_unmount_err
 
-        result3 = yield self.service._umount_fs(path)
-        result4 = yield self.service._route_request(FakeRequest(
+        result1 = yield self.service._umount_fs(path)
+        result2 = yield self.service._route_request(FakeRequest(
             '/VolumeDriver.Unmount', data))
 
-        self.assertEquals(result3, False)
-        self.assertEquals(result4['Err'], None)
+        self.assertEquals(result1, False)
+        self.assertEquals(result2['Err'], None)
 
-        # Restore the old test fork function
+        # Restore the old test fork function?
         self.service._fork = self.fork
