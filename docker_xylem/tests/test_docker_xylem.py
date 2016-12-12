@@ -19,7 +19,7 @@ class Test(unittest.TestCase):
         self.service = DockerService({
             'host': 'localhost',
             'mount_path': '/tmp/docker-xylem-test',
-            'old_mount_paths:': [
+            'old_mount_paths': [
                 '/some/old/path', '/another/random/old/path',
                 '/just/one/more/wont/hurt'
             ]
@@ -136,6 +136,9 @@ class Test(unittest.TestCase):
         """
         Test for /Volume.Unmount when the mount path has NOT been changed
         """
+        # Check if old mount paths were read correctly
+        self.assertFalse(len(self.service.old_paths) == 0)
+
         data = {'Name': 'testvol', 'ID': 'RANDOM_ID'}
         yield self.service._route_request(FakeRequest(
             '/VolumeDriver.Mount', data))
@@ -153,6 +156,9 @@ class Test(unittest.TestCase):
         """
         Test for /Volume.Unmount when the mount path HAS BEEN changed
         """
+
+        # Check if old mount paths were read correctly
+        self.assertFalse(len(self.service.old_paths)==0)
 
         data = {'Name': 'testvol', 'ID': 'RANDOM_ID'}
         yield self.service._route_request(FakeRequest(
