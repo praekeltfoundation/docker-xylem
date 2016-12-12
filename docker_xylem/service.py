@@ -32,10 +32,7 @@ class DockerService(resource.Resource):
             'mount_path',
             '/var/lib/docker-xylem/volumes'
         )
-        self.old_paths = {
-            '/var/lib/docker/volumes',
-            'var/lib/docker-xylem',
-        }
+        self.old_paths = config.get('old_mount_paths', [])
         self.current = {}
 
     def xylem_request(self, queue, call, data):

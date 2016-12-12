@@ -1,4 +1,6 @@
 host: my-xylem-server
 port: 7701
 mount_path: /var/lib/docker-xylem/volumes
+old_mount_paths:
+  - /var/lib/docker/volumes
 socket: /run/docker/plugins/xylem.sock
