@@ -129,19 +129,19 @@ class DockerService(resource.Resource):
         )
         name = data['Name']
         try:
-			paths = self.get_paths(name)
-			for path in paths:
-				self.log.info(
-					'Attemptting to unmount {name} from \"{path}\"',
-					name=name, path=path
-				)
-				yield self._umount_fs(path)
+            paths = self.get_paths(name)
+            for path in paths:
+                self.log.info(
+                    'Attemptting to unmount {name} from \"{path}\"',
+                    name=name, path=path
+                )
+                yield self._umount_fs(path)
 
-			self.log.warn(
-				'Volume {name} unmounted from all mount paths.',
-				name=name
-			)
-			defer.returnValue({"Err": None})
+            self.log.info(
+                'Volume {name} unmounted from all mount paths.',
+                name=name
+            )
+            defer.returnValue({"Err": None})
 
         except Exception, e:
             self.log.error(
