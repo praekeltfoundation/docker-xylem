@@ -33,10 +33,7 @@ class DockerService(resource.Resource):
             'mount_path',
             '/var/lib/docker-xylem/volumes'
         )
-        self.old_paths = {
-            '/var/lib/docker/volumes',
-            'var/lib/docker-xylem',
-        }
+        self.old_paths = config.get('old_mount_paths', [])
         self.current = {}
 
     def xylem_request(self, queue, call, data):
@@ -172,10 +169,8 @@ class DockerService(resource.Resource):
         :param name: Name of volume
         :return: list of possible paths for given volume name
         """
-        paths = []
-        for path in self.old_paths:
-            paths.append(os.path.join(path, name))
-        return paths
+
+        return [os.path.join(path, name) for path in self.old_paths]
 
     def get_volume_path(self, request, data):
         self.log.debug(
