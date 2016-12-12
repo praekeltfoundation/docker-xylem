@@ -158,7 +158,7 @@ class Test(unittest.TestCase):
         """
 
         # Check if old mount paths were read correctly
-        self.assertFalse(len(self.service.old_paths)==0)
+        self.assertFalse(len(self.service.old_paths) == 0)
 
         data = {'Name': 'testvol', 'ID': 'RANDOM_ID'}
         yield self.service._route_request(FakeRequest(
