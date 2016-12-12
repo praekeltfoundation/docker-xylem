@@ -134,10 +134,8 @@ class DockerService(resource.Resource):
         :param name: Name of volume
         :return: list of possible paths for given volume name
         """
-        paths = []
-        for path in self.old_paths:
-            paths.append(os.path.join(path, name))
-        return paths
+
+        return [os.path.join(path, name) for path in self.old_paths]
 
     def get_volume_path(self, request, data):
         name = data['Name']
