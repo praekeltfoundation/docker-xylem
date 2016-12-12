@@ -128,33 +128,20 @@ class DockerService(resource.Resource):
             data=str(data)
         )
         name = data['Name']
-        path = os.path.join(self.mount_path, name)
-
         try:
-            if (yield self._umount_fs(path)):
-                defer.returnValue({"Err": None})
-            else:
-                # Try older mount paths
-                self.log.warn(
-                    'Volume {name} was not found on \"{path}\".' +
-                    'Now trying older paths.',
-                    name=name, path=path
-                )
-                paths = self.get_paths(name)
-                for path in paths:
-                    self.log.info(
-                        'Attemptting to unmount {name} from \"{path}\"',
-                        name=name, path=path
-                    )
-                    if (yield self._umount_fs(path)):
-                        # Return if the volume is found on older paths
-                        defer.returnValue({"Err": None})
+			paths = self.get_paths(name)
+			for path in paths:
+				self.log.info(
+					'Attemptting to unmount {name} from \"{path}\"',
+					name=name, path=path
+				)
+				yield self._umount_fs(path)
 
-                self.log.warn(
-                    'Volume {name} not mounted on older mount paths.',
-                    name=name
-                )
-                defer.returnValue({"Err": None})
+			self.log.warn(
+				'Volume {name} unmounted from all mount paths.',
+				name=name
+			)
+			defer.returnValue({"Err": None})
 
         except Exception, e:
             self.log.error(
@@ -165,12 +152,13 @@ class DockerService(resource.Resource):
 
     def get_paths(self, name):
         """
-        Function to return an array of old mount paths
+        Function to return an array of mount paths
         :param name: Name of volume
         :return: list of possible paths for given volume name
         """
-
-        return [os.path.join(path, name) for path in self.old_paths]
+        paths = [os.path.join(path, name) for path in self.old_paths]
+        paths.append(os.path.join(self.mount_path, name))
+        return paths
 
     def get_volume_path(self, request, data):
         self.log.debug(
