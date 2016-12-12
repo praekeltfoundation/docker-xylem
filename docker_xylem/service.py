@@ -28,8 +28,11 @@ class DockerService(resource.Resource):
 
         self.xylem_host = config['host']
         self.xylem_port = config.get('port', 7701)
-        self.mount_path = config.get('mount_path', '/var/lib/docker/volumes')
-
+        self.mount_path = config.get(
+            'mount_path',
+            '/var/lib/docker-xylem/volumes'
+        )
+        self.old_paths = config.get('old_mount_paths', [])
         self.current = {}
 
     def xylem_request(self, queue, call, data):
@@ -40,6 +43,9 @@ class DockerService(resource.Resource):
             method='POST',
             data=json.dumps(data),
         )
+
+    def _fork(self, *args, **kw):
+        return utils.fork(*args, **kw)
 
     @defer.inlineCallbacks
     def _mount_fs(self, server, volume, dst):
@@ -53,7 +59,7 @@ class DockerService(resource.Resource):
             if e.errno != 17:
                 raise e
 
-        out, err, code = yield utils.fork('/bin/mount', args=(
+        out, err, code = yield self._fork('/bin/mount', args=(
             '-t', 'glusterfs', '%s:/%s' % (server, volume), dst))
 
         if code > 0:
@@ -67,14 +73,18 @@ class DockerService(resource.Resource):
         """ Mount a gluster filesystem on this host
         """
 
-        out, err, code = yield utils.fork('/bin/umount', args=(path,))
+        out, err, code = yield self._fork('/bin/umount', args=(path,))
 
         if code > 0:
-            if "%s is not mounted" % path in err:
-                defer.returnValue(True)
+
+            if (path in err) and ("not mounted" in err):
+                # Return false is not mounted
+                defer.returnValue(False)
             else:
+                # Raise an exception for any other error
                 raise Exception(err)
         else:
+            # Return true is mounted
             defer.returnValue(True)
 
     @defer.inlineCallbacks
@@ -99,14 +109,26 @@ class DockerService(resource.Resource):
     @defer.inlineCallbacks
     def unmount_volume(self, request, data):
         name = data['Name']
-        path = os.path.join(self.mount_path, name)
-
         try:
-            yield self._umount_fs(path)
+            # Unmount from all paths
+            paths = self.get_paths(name)
+            for path in paths:
+                yield self._umount_fs(path)
+
             defer.returnValue({"Err": None})
 
         except Exception, e:
             defer.returnValue({"Err": repr(e)})
+
+    def get_paths(self, name):
+        """
+        Function to return an array of mount paths
+        :param name: Name of volume
+        :return: list of possible paths for given volume name
+        """
+        paths = [os.path.join(path, name) for path in self.old_paths]
+        paths.append(os.path.join(self.mount_path, name))
+        return paths
 
     def get_volume_path(self, request, data):
         name = data['Name']
