@@ -8,7 +8,7 @@ from twisted.internet import reactor, protocol, defer, error
 from twisted.web.http_headers import Headers
 from twisted.web.iweb import IBodyProducer
 from twisted.web.client import Agent
-from twisted.python import log
+from twisted.logger import Logger
 
 from twisted.internet.endpoints import clientFromString
 
@@ -66,6 +66,7 @@ class StringProducer(object):
 class ProcessProtocol(protocol.ProcessProtocol):
     """ProcessProtocol which supports timeouts"""
     def __init__(self, deferred, timeout):
+        self.log = Logger()
         self.timeout = timeout
         self.timer = None
 
@@ -95,9 +96,10 @@ class ProcessProtocol(protocol.ProcessProtocol):
         def killIfAlive():
             try:
                 yield self.transport.signalProcess('KILL')
-                log.msg(
-                    'Killed source proccess: Timeout %s exceeded'
-                    % self.timeout)
+                self.log.info(
+                    'Killed source process: Timeout {timeout} exceeded',
+                    timeout=self.timeout
+                )
             except error.ProcessExitedAlready:
                 pass
 
@@ -145,6 +147,8 @@ class HTTPRequest(object):
     def __init__(self, timeout=120):
         self.timeout = timeout
 
+        self.log = Logger()
+
     def abort_request(self, request):
         """Called to abort request on timeout"""
         self.timedout = True
@@ -176,6 +180,7 @@ class HTTPRequest(object):
                 if SSL:
                     agent = Agent(reactor, WebClientContextFactory())
                 else:
+                    self.log.error('HTTPS requested but not supported')
                     raise Exception('HTTPS requested but not supported')
             else:
                 agent = Agent(reactor)
@@ -200,7 +205,8 @@ class HTTPRequest(object):
 
                 failure.trap(defer.CancelledError,
                              error.ConnectingCancelledError)
-
+                self.log.warn('Request took longer than {timeout} seconds',
+                              timeout=self.timeout)
                 raise Timeout(
                     "Request took longer than %s seconds" % self.timeout)
 

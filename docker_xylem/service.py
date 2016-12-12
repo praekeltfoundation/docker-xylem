@@ -40,6 +40,7 @@ class DockerService(resource.Resource):
         self.current = {}
 
     def xylem_request(self, queue, call, data):
+        self.log.info('HTTP request to xylem.')
         return utils.HTTPRequest(timeout=60).getJson(
             'http://%s:%s/queues/%s/wait/%s' % (
                 self.xylem_host, self.xylem_port, queue, call
