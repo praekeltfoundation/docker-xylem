@@ -109,30 +109,26 @@ class DockerService(resource.Resource):
     @defer.inlineCallbacks
     def unmount_volume(self, request, data):
         name = data['Name']
-        path = os.path.join(self.mount_path, name)
-
         try:
-            if (yield self._umount_fs(path)):
-                defer.returnValue({"Err": None})
-            else:
-                # Try older mount paths
-                paths = self.get_paths(name)
-                for path in paths:
-                    yield self._umount_fs(path)
+            # Unmount from all paths
+            paths = self.get_paths(name)
+            for path in paths:
+                yield self._umount_fs(path)
 
-                defer.returnValue({"Err": None})
+            defer.returnValue({"Err": None})
 
         except Exception, e:
             defer.returnValue({"Err": repr(e)})
 
     def get_paths(self, name):
         """
-        Function to return an array of old mount paths
+        Function to return an array of mount paths
         :param name: Name of volume
         :return: list of possible paths for given volume name
         """
-
-        return [os.path.join(path, name) for path in self.old_paths]
+        paths = [os.path.join(path, name) for path in self.old_paths]
+        paths.append(os.path.join(self.mount_path, name))
+        return paths
 
     def get_volume_path(self, request, data):
         name = data['Name']
