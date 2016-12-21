@@ -37,7 +37,10 @@ class DockerService(resource.Resource):
         self.current = {}
 
     def xylem_request(self, queue, call, data):
-        self.log.info('HTTP request to xylem.')
+        self.log.info(
+            'Xylem HTTP request to create volume {name}',
+            name=data['name']
+        )
         return utils.HTTPRequest(timeout=60).getJson(
             'http://%s:%s/queues/%s/wait/%s' % (
                 self.xylem_host, self.xylem_port, queue, call
@@ -93,10 +96,6 @@ class DockerService(resource.Resource):
 
     @defer.inlineCallbacks
     def mount_volume(self, request, data):
-        self.log.debug(
-            'Function Call: mount_volume(), `data` = \"{data}\"',
-            data=str(data)
-        )
         name = data['Name']
         path = os.path.join(self.mount_path, name)
 
@@ -123,10 +122,6 @@ class DockerService(resource.Resource):
 
     @defer.inlineCallbacks
     def unmount_volume(self, request, data):
-        self.log.debug(
-            'Function Call: unmount_volume(), `data` = \"{data}\"',
-            data=str(data)
-        )
         name = data['Name']
         try:
             paths = self.get_paths(name)
@@ -161,10 +156,6 @@ class DockerService(resource.Resource):
         return paths
 
     def get_volume_path(self, request, data):
-        self.log.debug(
-            'Function Call: get_volume_path(), `data` = \"{data}\"',
-            data=str(data)
-        )
         name = data['Name']
         path = os.path.join(self.mount_path, name)
         return {
@@ -174,18 +165,10 @@ class DockerService(resource.Resource):
 
     def remove_volume(self, request, data):
         # FIXME: This probably isn't supposed to do nothing.
-        self.log.debug(
-            'Function Call: remove_volume(), `data` = \"{data}\"',
-            data=str(data)
-        )
         return {"Err": None}
 
     @defer.inlineCallbacks
     def create_volume(self, request, data):
-        self.log.debug(
-            'Function Call: create_volume(), `data` = \"{data}\"',
-            data=str(data)
-        )
         name = data['Name']
 
         result = yield self.xylem_request('gluster', 'createvolume', {
@@ -193,7 +176,10 @@ class DockerService(resource.Resource):
         })
 
         if not result['result']['running']:
-            self.log.error('Error creating volume {name}', name=name)
+            self.log.error(
+                'Error creating volume {name} with ID: \"{id}\"',
+                name=name, id=result['result'][id]
+            )
             err = "Error creating volume %s" % name
         else:
             err = None
@@ -202,10 +188,6 @@ class DockerService(resource.Resource):
         defer.returnValue({"Err": err})
 
     def get_volume(self, request, data):
-        self.log.debug(
-            'Function Call: get_volume(), `data` = \"{data}\"',
-            data=str(data)
-        )
         name = data['Name']
 
         if name in self.current:
@@ -221,10 +203,6 @@ class DockerService(resource.Resource):
             return {'Err': 'No mounted volume'}
 
     def list_volumes(self, request, data):
-        self.log.debug(
-            'Function Call: list_volumes(), `data` = \"{data}\"',
-            data=str(data)
-        )
         vols = []
 
         for k, v in self.current.items():
@@ -236,10 +214,6 @@ class DockerService(resource.Resource):
         return {'Volumes': vols, 'Err': None}
 
     def capabilities(self, request, data):
-        self.log.debug(
-            'Function Call: capabilities(), `data` = \"{data}\"',
-            data=str(data)
-        )
         return {
             "Capabilities": {
                 "Scope": "global"
@@ -247,10 +221,6 @@ class DockerService(resource.Resource):
         }
 
     def plugin_activate(self, request, data):
-        self.log.debug(
-            'Function Call: plugin_activate(), `data` = \"{data}\"',
-            data=str(data)
-        )
         self.log.info('Docker-Xylem plugin activated.')
         return {
             'Implements': ['VolumeDriver']
@@ -277,7 +247,10 @@ class DockerService(resource.Resource):
                 request=request
             )
             return "Not Implemented"
-
+        self.log.info(
+            '{request.path} called. data={data}',
+            request=request, data=data
+        )
         return defer.maybeDeferred(method, request, data)
 
     def render_POST(self, request):
