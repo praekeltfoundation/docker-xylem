@@ -4,7 +4,7 @@ import cgi
 
 from twisted.internet import defer
 from twisted.web import server, resource
-from twisted.python import log
+from twisted.logger import Logger
 
 from docker_xylem import utils
 
@@ -12,6 +12,7 @@ from docker_xylem import utils
 class DockerService(resource.Resource):
     isLeaf = True
     addSlash = True
+    log = Logger()
 
     def __init__(self, config):
         self.requestRouter = {
@@ -36,6 +37,10 @@ class DockerService(resource.Resource):
         self.current = {}
 
     def xylem_request(self, queue, call, data):
+        self.log.info(
+            'Xylem HTTP request to create volume {name}',
+            name=data['name']
+        )
         return utils.HTTPRequest(timeout=60).getJson(
             'http://%s:%s/queues/%s/wait/%s' % (
                 self.xylem_host, self.xylem_port, queue, call
@@ -79,12 +84,14 @@ class DockerService(resource.Resource):
 
             if (path in err) and ("not mounted" in err):
                 # Return false is not mounted
+                self.log.warn('Volume {path} is not mounted', path=path)
                 defer.returnValue(False)
             else:
                 # Raise an exception for any other error
                 raise Exception(err)
         else:
             # Return true is mounted
+            self.log.info('Successfully unmounted {path}', path=path)
             defer.returnValue(True)
 
     @defer.inlineCallbacks
@@ -97,27 +104,45 @@ class DockerService(resource.Resource):
 
             if name not in self.current:
                 self.current[name] = path
-
+            self.log.info(
+                'Successfully mounted volume {name}. Mount path:\"{path}\"',
+                name=name, path=path
+            )
             defer.returnValue({
                 "Mountpoint": path,
                 "Err": None
             })
 
         except Exception, e:
+            self.log.error(
+                'Error mounting {name}. \"{e.message}\"',
+                name=name, e=e
+            )
             defer.returnValue({"Err": repr(e)})
 
     @defer.inlineCallbacks
     def unmount_volume(self, request, data):
         name = data['Name']
         try:
-            # Unmount from all paths
             paths = self.get_paths(name)
             for path in paths:
+                self.log.info(
+                    'Attemptting to unmount {name} from \"{path}\"',
+                    name=name, path=path
+                )
                 yield self._umount_fs(path)
 
+            self.log.info(
+                'Volume {name} unmounted from all mount paths.',
+                name=name
+            )
             defer.returnValue({"Err": None})
 
         except Exception, e:
+            self.log.error(
+                'Error unmounting volume {name}. \"{e.message}\"',
+                name=name, e=e
+            )
             defer.returnValue({"Err": repr(e)})
 
     def get_paths(self, name):
@@ -140,7 +165,6 @@ class DockerService(resource.Resource):
 
     def remove_volume(self, request, data):
         # FIXME: This probably isn't supposed to do nothing.
-
         return {"Err": None}
 
     @defer.inlineCallbacks
@@ -152,10 +176,15 @@ class DockerService(resource.Resource):
         })
 
         if not result['result']['running']:
+            self.log.error(
+                'Error creating volume {name} with ID: \"{id}\"',
+                name=name, id=result['result'][id]
+            )
             err = "Error creating volume %s" % name
         else:
             err = None
 
+        self.log.info('Successfully created the volume {name}.', name=name)
         defer.returnValue({"Err": err})
 
     def get_volume(self, request, data):
@@ -185,7 +214,6 @@ class DockerService(resource.Resource):
         return {'Volumes': vols, 'Err': None}
 
     def capabilities(self, request, data):
-
         return {
             "Capabilities": {
                 "Scope": "global"
@@ -193,6 +221,7 @@ class DockerService(resource.Resource):
         }
 
     def plugin_activate(self, request, data):
+        self.log.info('Docker-Xylem plugin activated.')
         return {
             'Implements': ['VolumeDriver']
         }
@@ -213,14 +242,21 @@ class DockerService(resource.Resource):
         method = self.requestRouter.get(request.path)
 
         if not method:
+            self.log.warn(
+                '{request.path} is not implemented by plugin.',
+                request=request
+            )
             return "Not Implemented"
-
+        self.log.info(
+            '{request.path} called. data={data}',
+            request=request, data=data
+        )
         return defer.maybeDeferred(method, request, data)
 
     def render_POST(self, request):
         request.setHeader("content-type", "application/json")
 
-        log.msg(request.path)
+        self.log.info('request.path', request=request)
 
         self._route_request(request).addCallback(self.completeCall, request)
 
