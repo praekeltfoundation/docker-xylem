@@ -3,9 +3,7 @@ python:
   - 2.7
 matrix:
   include:
-    # Python 2.7 with the latest Twisted.
-    - python: 2.7
-    # Python 2.7 with Twisted 13.2.0 for Ubuntu.
+    # Also build with Twisted 13.2.0 for Ubuntu.
     - python: 2.7
       env: TWISTED_VERSION=13.2.0
 
