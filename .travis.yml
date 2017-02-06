@@ -1,11 +1,21 @@
 language: python
 python:
   - 2.7
+matrix:
+  include:
+    # Python 2.7 with the latest Twisted.
+    - python: 2.7
+    # Python 2.7 with Twisted 13.2.0 for Ubuntu.
+    - python: 2.7
+      env: TWISTED_VERSION=13.2.0
+
 install:
-    - pip install .
-    - pip install flake8
+  - pip install -U pip
+  - if [ ! -z "$TWISTED_VERSION" ]; then pip install $TWISTED_VERSION; fi
+  - pip install .
+  - pip install flake8
 services:
-    - redis-server
+  - redis-server
 script:
-    - trial docker_xylem
-    - flake8
+  - trial docker_xylem
+  - flake8
