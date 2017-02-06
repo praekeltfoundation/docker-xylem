@@ -9,7 +9,7 @@ matrix:
 
 install:
   - pip install -U pip
-  - if [ ! -z "$TWISTED_VERSION" ]; then pip install $TWISTED_VERSION; fi
+  - if [ ! -z "$TWISTED_VERSION" ]; then pip install "Twisted==$TWISTED_VERSION"; fi
   - pip install .
   - pip install flake8
 services:
