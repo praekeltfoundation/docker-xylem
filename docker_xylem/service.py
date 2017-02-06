@@ -4,9 +4,9 @@ import cgi
 
 from twisted.internet import defer
 from twisted.web import server, resource
-from twisted.logger import Logger
 
 from docker_xylem import utils
+from docker_xylem.compat import Logger
 
 
 class DockerService(resource.Resource):

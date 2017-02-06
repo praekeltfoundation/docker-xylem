@@ -8,9 +8,9 @@ from twisted.internet import reactor, protocol, defer, error
 from twisted.web.http_headers import Headers
 from twisted.web.iweb import IBodyProducer
 from twisted.web.client import Agent
-from twisted.logger import Logger
-
 from twisted.internet.endpoints import clientFromString
+
+from docker_xylem.compat import Logger
 
 
 class SocketyAgent(Agent):
