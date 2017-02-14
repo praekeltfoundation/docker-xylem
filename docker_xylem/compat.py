@@ -11,8 +11,17 @@ except ImportError:
     from twisted.python import log
 
     class Logger(object):
+        def debug(self, format, **kw):
+            log.msg(format.format(**kw), logLevel=logging.DEBUG)
+
         def info(self, format, **kw):
             log.msg(format.format(**kw), logLevel=logging.INFO)
 
         def warn(self, format, **kw):
             log.msg(format.format(**kw), logLevel=logging.WARNING)
+
+        def error(self, format, **kw):
+            log.msg(format.format(**kw), logLevel=logging.ERROR)
+
+        def critical(self, format, **kw):
+            log.msg(format.format(**kw), logLevel=logging.CRITICAL)
