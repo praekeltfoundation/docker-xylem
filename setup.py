@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="docker_xylem",
-    version='0.1.7a0',
+    version='0.1.7',
     url='http://github.com/praekeltfoundation/docker-xylem',
     license='MIT',
     description="A docker storage plugin",
