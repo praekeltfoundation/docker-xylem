@@ -178,7 +178,7 @@ class DockerService(resource.Resource):
         if not result['result']['running']:
             self.log.error(
                 'Error creating volume {name} with ID: \"{id}\"',
-                name=name, id=result['result'][id]
+                name=name, id=result['result']['id']
             )
             err = "Error creating volume %s" % name
         else:
@@ -256,7 +256,7 @@ class DockerService(resource.Resource):
     def render_POST(self, request):
         request.setHeader("content-type", "application/json")
 
-        self.log.info('request.path', request=request)
+        self.log.info('{request.path}', request=request)
 
         self._route_request(request).addCallback(self.completeCall, request)
 
